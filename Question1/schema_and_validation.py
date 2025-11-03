@@ -1,4 +1,4 @@
-"""Scenario: FlightShepherd drones send JSON packets every second during flight
+"""Scenario: drones send JSON packets every second during flight
 containing basic telemetry. You need to design a Python service that receives
 this data and stores it.
 Sample data format:
@@ -12,21 +12,20 @@ json{
 }
 Tasks:
 
-Design a simple relational database schema to store this data (just describe t
-he table structure)
-Write a Python class that validates incoming JSON and inserts it into a SQLite
+- Design a simple relational database schema to store this data (just describe
+the table structure)
+- Write a Python class that validates incoming JSON and inserts it into a SQLite
 database.
-Handle edge cases: duplicate timestamps, missing fields, invalid coordinates"""
+- Handle edge cases: duplicate timestamps, missing fields, invalid coordinates."""
+
 import sqlite3
+from datetime import datetime
 
 
-class DroneDBConnection:
+class FlightDBConnection:
     def __init__(self):
         self.open()
-
-        # drop current Drone and Location tables if present
-        # create Drone and Location tables with feilds listed in classes below
-        # confirm tables were created
+        self.create_table_if_not_exisits()
         self.close()
 
     def open(self):
@@ -36,19 +35,109 @@ class DroneDBConnection:
     def close(self):
         self.db_connection.close()
 
+    def create_table_if_not_exists(self):
+        self.cursor.execute("CREATE TABLE flight_telemetry ("
+                            "flight_id TEXT NOT NULL,"
+                            "timestamp DATETIME NOT NULL,"
+                            "latitude REAL NOT NULL,"
+                            "longitude REAL NOT NULL,"
+                            "altitude_meters REAL NOT NULL,"
+                            "battery_percent INTEGER,"
+                            "PRIMARY KEY (flight_id, timestamp)"
+                            ")")
+        self.db_connection.commit()
 
-class DroneDataSerializer(DroneDBConnection):
 
-    def validate_data(self, models):
+class FlightSerializer(FlightDBConnection):
+    def __init__(self):
+        self.data
+        self.validated_data
+
+    def validate_data(self, data: dict):
         """Ensure all data is serialized correctly for saving in db. Handle serialization failures."""
-        # get all the model feilds and their restraints
-        # does the json match the model feilds? Yes-> return true, No-> return list of additional or missing felids
-        # do all the feilds meet their restraint reqs? Yes -> return true, No -> return list of errors
-        pass
 
-    def validate_lat_and_long(self, lat, long):
-        """Validates the lat and long as being accurate"""
-        pass
+        self.data = data
+        # valid feilds?
+        valid_feilds = ["flight_id", "timestamp", "latitude",
+                        "longitude", "altitude_meters", "battery_percent"]
+
+        not_present = []
+        for feild in valid_feilds:
+            if feild not in data:
+                not_present.append(feild)
+
+        if not not_present:
+            raise KeyError(f"The following keys are required: {not_present}")
+            return None
+
+        # validate feild data
+        flight_id = self._validate_flight_id(data.get("flight_id"))
+        timestamp = self._validate_timestamp(data.get("timestamp"))
+        latitude = self._validate_latitude(data.get("latitude"))
+        longitude = self._validate_longitude(data.get("longitude"))
+        altitude_meters = self._validate_altitude_meters(
+            data.get("altitude_meters"))
+        battery_percent = self._validate_battery_percent(
+            data.get("battery_percent"))
+
+        self.validate_data = {"flight_id": flight_id,
+                              "timestamp": timestamp,
+                              "latitude": latitude,
+                              "longitude": longitude,
+                              "altitude_meters": altitude_meters,
+                              "battery_percent": battery_percent}
+        return self.validate_data
+
+    def _validate_flight_id(self, flight_id):
+
+        if not flight_id or not isinstance(flight_id, str):
+            raise ValueError(
+                f"provided flight_id is not a string, must be of type str.")
+
+        return flight_id
+
+    def _validate_timestamp(self, timestamp):
+        if not timestamp:
+            raise ValueError("timestamp value must be provided.")
+        try:
+            isoformat_timestamp = datetime.fromisoformat(timestamp)
+        except ValueError:
+            raise ValueError("timestamp must be a valid iso format.")
+
+        return isoformat_timestamp
+
+    def _validate_latitude(self, latitude):
+        if not latitude:
+            raise ValueError("latitude value must be provided")
+
+        lat = float(latitude)
+
+        if lat < -90 or lat > 90:
+            raise ValueError("latitude must be between -90 and 90 to be valid")
+        return lat
+
+    def _validate_longitude(self, longitude):
+        if not longitude:
+            raise ValueError("latitude value must be provided")
+        long = float(longitude)
+        if long < -180 or long > 180:
+            raise ValueError(
+                "longitude must be between -180 and 180 to be valid")
+        return long
+
+    def _validate_altitude_meters(self, altitude):
+        if not altitude:
+            raise ValueError("altitude_meters value must be provided")
+        return float(altitude)
+
+    def _validate_battery_percent(self, battery_percent):
+        if not battery_percent:
+            return
+        bat_per = float(battery_percent)
+        if bat_per < 0 or bat_per > 100:
+            raise ValueError(
+                "battery_percent must be between 0 and 100 to be valid")
+        return bat_per
 
     def save(self, validated_data):
         """Saves validated data to the database and returns success or failure message"""
@@ -66,26 +155,3 @@ class DroneDataSerializer(DroneDBConnection):
 
         self.close()
         return True
-
-# class Drone:
-#     def __init__(self, id, flight_id, location_id,):
-#         self.id = id
-#         self.flight_id = flight_id
-#         self.location_id = location_id
-
-
-# class Location:
-#     def __init__(self,
-#                  id,
-#                  long: int,
-#                  lat: int,
-#                  time_stamp: datetime,
-#                  altitude_meters: int,
-#                  battery_percent: int
-#                  ):
-#         self.id = id
-#         self.long = long
-#         self.lat = lat
-#         self.time_stamp = time_stamp
-#         self.altitude_meters = altitude_meters
-#         self.battery_percent = battery_percent
