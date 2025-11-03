@@ -25,49 +25,62 @@ from datetime import datetime
 class FlightDBConnection:
     def __init__(self):
         self.open()
-        self.create_table_if_not_exisits()
+        self.create_table_if_not_exists()
         self.close()
 
     def open(self):
-        self.db_connection = sqlite3.connect('drone_data.db')
+        self.db_connection = sqlite3.connect("drone_data.db")
         self.cursor = self.db_connection.cursor()
 
     def close(self):
         self.db_connection.close()
 
     def create_table_if_not_exists(self):
-        self.cursor.execute("CREATE TABLE flight_telemetry ("
-                            "flight_id TEXT NOT NULL,"
-                            "timestamp DATETIME NOT NULL,"
-                            "latitude REAL NOT NULL,"
-                            "longitude REAL NOT NULL,"
-                            "altitude_meters REAL NOT NULL,"
-                            "battery_percent INTEGER,"
-                            "PRIMARY KEY (flight_id, timestamp)"
-                            ")")
+        self.cursor.execute(
+            "CREATE TABLE IF NOT EXISTS flight_telemetry ("
+            "flight_id TEXT NOT NULL,"
+            "timestamp DATETIME NOT NULL,"
+            "latitude REAL NOT NULL,"
+            "longitude REAL NOT NULL,"
+            "altitude_meters REAL NOT NULL,"
+            "battery_percent INTEGER,"
+            "PRIMARY KEY (flight_id, timestamp)"
+            ")"
+        )
         self.db_connection.commit()
 
 
 class FlightSerializer(FlightDBConnection):
     def save(self, data: dict) -> None:
-        """Saves validated data to the database and returns success or failure message"""
+        """Saves validated data to the database and returns success or
+        failure message.
+        """
 
         self.open()
         try:
-            self.cursor.execute("""INSERT INTO flight_telemetry
-                                (flight_id, timestamp, latitude, longitude, altitude_meters, battery_percent)
+            self.cursor.execute(
+                """INSERT INTO flight_telemetry
+                                (flight_id,
+                                timestamp,
+                                latitude,
+                                longitude,
+                                altitude_meters,
+                                battery_percent)
                                 values(?,?,?,?,?,?)""",
-                                (data["flight_id"],
-                                 data["timestamp"],
-                                 data["latitude"],
-                                 data["longitude"],
-                                 data["altitude_meters"],
-                                 data.get("battery_percent")))
+                (
+                    data["flight_id"],
+                    data["timestamp"],
+                    data["latitude"],
+                    data["longitude"],
+                    data["altitude_meters"],
+                    data.get("battery_percent"),
+                ),
+            )
 
             self.db_connection.commit()
 
-        except (sqlite3.IntegrityError) as e:
-            raise (f"Failed to save data: {data}, error: {e}")
+        except sqlite3.IntegrityError as e:
+            raise ValueError(f"Failed to save data: {e}")
 
         finally:
             self.close()
@@ -76,34 +89,39 @@ class FlightSerializer(FlightDBConnection):
         """Ensure all data is serialized correctly for saving in db."""
 
         # valid feilds
-        valid_feilds = ["flight_id", "timestamp", "latitude",
-                        "longitude", "altitude_meters", "battery_percent"]
+        valid_feilds = [
+            "flight_id",
+            "timestamp",
+            "latitude",
+            "longitude",
+            "altitude_meters",
+            "battery_percent",
+        ]
 
         not_present = []
         for feild in valid_feilds:
             if feild not in data:
                 not_present.append(feild)
 
-        if not not_present:
+        if not_present:
             raise KeyError(f"The following keys are required: {not_present}")
-            return None
 
         # validate feild data
         flight_id = self._validate_flight_id(data.get("flight_id"))
         timestamp = self._validate_timestamp(data.get("timestamp"))
         latitude = self._validate_latitude(data.get("latitude"))
         longitude = self._validate_longitude(data.get("longitude"))
-        altitude_meters = self._validate_altitude_meters(
-            data.get("altitude_meters"))
-        battery_percent = self._validate_battery_percent(
-            data.get("battery_percent"))
+        altitude_meters = self._validate_altitude_meters(data.get("altitude_meters"))
+        battery_percent = self._validate_battery_percent(data.get("battery_percent"))
 
-        validated_data = {"flight_id": flight_id,
-                          "timestamp": timestamp,
-                          "latitude": latitude,
-                          "longitude": longitude,
-                          "altitude_meters": altitude_meters,
-                          "battery_percent": battery_percent}
+        validated_data = {
+            "flight_id": flight_id,
+            "timestamp": timestamp,
+            "latitude": latitude,
+            "longitude": longitude,
+            "altitude_meters": altitude_meters,
+            "battery_percent": battery_percent,
+        }
 
         # save validated_data to db
         self.save(validated_data)
@@ -113,8 +131,7 @@ class FlightSerializer(FlightDBConnection):
     def _validate_flight_id(self, flight_id):
 
         if not flight_id or not isinstance(flight_id, str):
-            raise ValueError(
-                f"provided flight_id is not a string, must be of type str.")
+            raise ValueError("provided flight_id is not a string, must be of type str.")
 
         return flight_id
 
@@ -143,8 +160,7 @@ class FlightSerializer(FlightDBConnection):
             raise ValueError("latitude value must be provided")
         long = float(longitude)
         if long < -180 or long > 180:
-            raise ValueError(
-                "longitude must be between -180 and 180 to be valid")
+            raise ValueError("longitude must be between -180 and 180 to be valid")
         return long
 
     def _validate_altitude_meters(self, altitude):
@@ -157,8 +173,7 @@ class FlightSerializer(FlightDBConnection):
             return
         bat_per = float(battery_percent)
         if bat_per < 0 or bat_per > 100:
-            raise ValueError(
-                "battery_percent must be between 0 and 100 to be valid")
+            raise ValueError("battery_percent must be between 0 and 100 to be valid")
         return bat_per
 
 
@@ -168,7 +183,7 @@ data_1 = {
     "latitude": 37.7749,
     "longitude": -122.4194,
     "altitude_meters": 120.5,
-    "battery_percent": 85
+    "battery_percent": 85,
 }
 
 
