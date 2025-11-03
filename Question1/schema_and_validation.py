@@ -56,16 +56,16 @@ class FlightDBConnection:
 
 class FlightSerializer:
     def __init__(self, db_connection):
-        self.db = db_connection
+        self.db_connection = db_connection
 
-    def save(self, data: dict) -> None:
+    def save(self, data: dict) -> dict:
         """Saves validated data to the database and returns success or
         failure message.
         """
 
-        self.db.open()
+        self.db_connection.open()
         try:
-            self.db.cursor.execute(
+            result = self.db_connection.cursor.execute(
                 """INSERT INTO flight_telemetry
                                 (flight_id,
                                 timestamp,
@@ -84,13 +84,14 @@ class FlightSerializer:
                 ),
             )
 
-            self.db.db_connection.commit()
+            self.db_connection.db.commit()
+            return result
 
         except sqlite3.IntegrityError as e:
             raise ValueError(f"Failed to save data: {e}")
 
         finally:
-            self.db.close()
+            self.db_connection.close()
 
     def validate_and_save(self, data: dict) -> dict:
         validated_data = self.validate_data(data)
@@ -180,8 +181,17 @@ class FlightSerializer:
         return bat_per
 
 
+# testing
 data_1 = {
     "flight_id": "FS-2025-001",
+    "timestamp": "2025-11-02T10:30:45Z",
+    "latitude": 37.7749,
+    "longitude": -122.4194,
+    "altitude_meters": 120.5,
+    "battery_percent": 85,
+}
+data_2 = {
+    "flight_id": "FS-2025-002",
     "timestamp": "2025-11-02T10:30:45Z",
     "latitude": 37.7749,
     "longitude": -122.4194,
@@ -191,10 +201,11 @@ data_1 = {
 
 
 def test_flight_serializer(data):
-    x = FlightSerializer(FlightDBConnection)
-    success = x.validate_data(data)
+    x = FlightSerializer(FlightDBConnection())
+    success = x.validate_and_save(data)
     print(success)
     return
 
 
-test_flight_serializer(data_1)
+# test_flight_serializer(data_1)
+test_flight_serializer(data_2)
