@@ -14,5 +14,5 @@ Scenario: Human labelers need to review flight footage and mark "events of inter
 
 ## Question 4:
 Scenario: You are an engineer for a lock company. You need to create a function that unlocks the lock if the correct knock pattern has occurred. The open method and knock listener method  has already been created for you.
-open() : opens the door attached to the lock
-knock_listener(): returns a timestamp of when the knock occurred
+- open() : opens the door attached to the lock.
+- knock_listener(): returns a timestamp of when a knock occurred.
