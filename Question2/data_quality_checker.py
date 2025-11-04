@@ -80,9 +80,11 @@ def flight_gap_handler_python(flight_id: str) -> list:
     for i in range(len(rows) - 1):
         flight_id = rows[i]["flight_id"]
 
+        # Save flight data for flight_id if there are gaps, and start on new flight
         if flight_id != current_flight_id:
             if flight_report and flight_report["gaps"] > 0:
                 report.append(flight_report)
+
         current_flight_id = flight_id
 
         flight_report = {"flight_id": current_flight_id, "gaps": 0, "longest_gap": 0}
