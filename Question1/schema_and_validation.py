@@ -145,11 +145,11 @@ class FlightSerializer:
         if not timestamp:
             raise ValueError("timestamp value must be provided.")
         try:
-            isoformat_timestamp = datetime.fromisoformat(timestamp)
+            isoformat = datetime.fromisoformat(timestamp)
         except ValueError:
             raise ValueError("timestamp must be a valid iso format.")
 
-        return isoformat_timestamp
+        return timestamp if isoformat else None
 
     def _validate_latitude(self, latitude):
         if latitude is None:
@@ -190,9 +190,35 @@ data_1 = {
     "altitude_meters": 120.5,
     "battery_percent": 85,
 }
+# same flight - diff times
+
 data_2 = {
     "flight_id": "FS-2025-002",
     "timestamp": "2025-11-02T10:30:45Z",
+    "latitude": 37.7749,
+    "longitude": -122.4194,
+    "altitude_meters": 120.5,
+    "battery_percent": 85,
+}
+data_3 = {
+    "flight_id": "FS-2025-002",
+    "timestamp": "2025-11-02T10:30:46Z",
+    "latitude": 37.7749,
+    "longitude": -122.4194,
+    "altitude_meters": 120.5,
+    "battery_percent": 85,
+}
+data_4 = {
+    "flight_id": "FS-2025-002",
+    "timestamp": "2025-11-02T10:30:47Z",
+    "latitude": 37.7749,
+    "longitude": -122.4194,
+    "altitude_meters": 120.5,
+    "battery_percent": 85,
+}
+data_5 = {
+    "flight_id": "FS-2025-002",
+    "timestamp": "2025-11-02T10:31:46Z",
     "latitude": 37.7749,
     "longitude": -122.4194,
     "altitude_meters": 120.5,
@@ -207,5 +233,8 @@ def test_flight_serializer(data):
     return
 
 
-# test_flight_serializer(data_1)
+test_flight_serializer(data_1)
 test_flight_serializer(data_2)
+test_flight_serializer(data_3)
+test_flight_serializer(data_4)
+test_flight_serializer(data_5)

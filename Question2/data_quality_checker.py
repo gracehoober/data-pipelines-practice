@@ -25,9 +25,10 @@ Understanding of time series vs relational trade-offs
 Communication about design decisions"""
 
 import sqlite3
+from datetime import datetime
 
 
-def open_db_connection(db_name: str):
+def open_db_connection(db_name: str | None = None):
     if db_name is None:
         db_name = "drone_data.db"
 
@@ -39,9 +40,11 @@ def close_db_connection(db_connection):
     return
 
 
-def fetch_rows(db_conn, table_name, flight_id: str | None):
+def fetch_rows(db_conn, table_name, flight_id: str | None) -> list:
     try:
+        db_conn.row_factory = sqlite3.Row
         cursor = db_conn.cursor()
+
         if flight_id:
             cursor.execute(
                 f"SELECT * FROM {table_name} WHERE flight_id = ? ORDER BY timestamp",
@@ -63,16 +66,23 @@ def fetch_rows(db_conn, table_name, flight_id: str | None):
 
 def flight_gap_handler_python(flight_id: str) -> list:
     table_name = "flight_telemetry"
-    db_conn = open_db_connection(table_name)
+    db_conn = open_db_connection()
     rows = fetch_rows(db_conn=db_conn, table_name=table_name, flight_id=flight_id)
-    # [{row1}, {row2]}
+
     report = []
     # TODO: fix nested if possible
-    for i in range(0, len(rows) - 1):
+
+    for i in range(len(rows) - 1):
+        flight_id = rows[i]["flight_id"]
+
+        if len(rows) <= 1:
+            print(f"Only one flight value for {flight_id}, no gaps in this flight")
+            continue
+
         flight_report = {"flight_id": "", "gaps": 0, "longest_gap": 0}
-        gap = rows[i + 1]["timestamp"] - rows[i]["timestamp"]  # TODO: fix time calc
+        gap = caluculate_gap(rows[i + 1]["timestamp"], rows[i]["timestamp"])
         if gap > 3:
-            flight_report["flight_id"] = rows[i]["flight_id"]
+            flight_report["flight_id"] = flight_id
             flight_report["gaps"] += 1
             if gap > flight_report["longest_gap"]:
                 flight_report["longest_gap"] = gap
@@ -81,5 +91,20 @@ def flight_gap_handler_python(flight_id: str) -> list:
     return report
 
 
-def flight_gap_handler_sql():
-    pass
+def caluculate_gap(timeA, timeB) -> float:
+    try:
+        A = datetime.fromisoformat(timeA)
+        B = datetime.fromisoformat(timeB)
+    except ValueError:
+        raise ValueError("Unable to convert time to datetime obj and determine gap.")
+
+    gap = A - B if A > B else B - A
+    return gap.total_seconds()
+
+
+# def flight_gap_handler_sql():
+#     pass
+
+
+report = flight_gap_handler_python(flight_id="FS-2025-002")
+print(report)
