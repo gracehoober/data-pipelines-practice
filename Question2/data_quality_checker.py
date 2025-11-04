@@ -70,19 +70,25 @@ def flight_gap_handler_python(flight_id: str) -> list:
     rows = fetch_rows(db_conn=db_conn, table_name=table_name, flight_id=flight_id)
 
     report = []
-    # TODO: fix nested if possible
+    current_flight_id = None
+    flight_report = None
+
+    if len(rows) == 0:
+        print("No telemetry data found")
+        return report
 
     for i in range(len(rows) - 1):
         flight_id = rows[i]["flight_id"]
 
-        if len(rows) <= 1:
-            print(f"Only one flight value for {flight_id}, no gaps in this flight")
-            continue
+        if flight_id != current_flight_id:
+            if flight_report and flight_report["gaps"] > 0:
+                report.append(flight_report)
+        current_flight_id = flight_id
 
-        flight_report = {"flight_id": "", "gaps": 0, "longest_gap": 0}
+        flight_report = {"flight_id": current_flight_id, "gaps": 0, "longest_gap": 0}
+
         gap = caluculate_gap(rows[i + 1]["timestamp"], rows[i]["timestamp"])
         if gap > 3:
-            flight_report["flight_id"] = flight_id
             flight_report["gaps"] += 1
             if gap > flight_report["longest_gap"]:
                 flight_report["longest_gap"] = gap
