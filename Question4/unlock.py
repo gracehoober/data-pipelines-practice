@@ -1,8 +1,6 @@
 """
 I got this question in an interview, I was nervous and had trouble thinking. This is my
-implementation post interview. I did not use an LLM or coding assistant for this work
-because this question is actually cool to have as an interviewee and I want to show
-myself what I am capable of.
+implementation post interview. I did not use an LLM or coding assistant for this work.
 
 Scenario: You are an engineer for a lock company. You need to create a function that
 unlocks the lock if the correct knock pattern has occurred.
@@ -12,16 +10,6 @@ The open method and knock listener method has already been created for you.
 """
 
 from typing import List
-
-# My Notes:
-# Formatting: put all this into a class and follow more OOP if expanding,
-#             seconds is of type int for simplicity but could be type float,
-# Security: What should be returned to the user if none of their attempts work?
-# Future feats: implement open_door and knock_listener,
-# Valid knock method: what if we cannot use "==" to compare lists?
-#           Implement with pointer to compare, if ever hit two values that are
-#               not the same go to next sublist.
-#           Early escape if list lengths are not the same
 
 
 def open_door():
@@ -43,8 +31,6 @@ def main(valid_pattern: List[int], limit: int = 1) -> None:
     user_timestamps = gather_user_tries(limit=limit, max_knocks=len(valid_pattern))
 
     user_intervals = timestamps_to_intervals(user_timestamps)
-    # conver user_tries to time intervals. each time interval being the
-    # difference between the time stamps in user_tries
 
     if valid_knock(valid_pattern=valid_pattern, user_tries=user_intervals):
         open_door()
@@ -87,12 +73,14 @@ def timestamps_to_intervals(timestamp_series: List[List[int]]) -> List[List[int]
         timestamp_series:[[timestamp, timestamp], [timestamp, timestamp, timestamp]...]
         Assume the timestamps are is desc order: [[oldest time, ... ,earliest time]]
     """
-    # what if the datastructure did not have ordered timestamps?
+    # what if the incoming datastructure did not have ordered timestamps?
 
     intervals = []
     for series in timestamp_series:
+        series_intervals = []
         for i in range(len(series) - 1):
-            intervals.append(series[i] - series[i + 1])
+            series_intervals.append(series[i] - series[i + 1])
+        intervals.append(series_intervals)
 
     return intervals
 
@@ -113,3 +101,17 @@ def valid_knock(valid_pattern: List[int], user_tries: List[List[int]]) -> bool:
 if __name__ == "__main__":
     valid_pattern = [1, 2, 3]
     main(valid_pattern=valid_pattern, limit=3)
+
+
+# My Notes:
+# Formatting: put all this into a class and follow more OOP if expanding,
+#             seconds is of type int for simplicity but could be type float,
+# Security: What should be returned to the user if none of their attempts work?
+# Future feats: implement open_door and knock_listener.
+# valid_knock method: what if we cannot use "==" to compare lists?
+#           Implement with pointer to compare, if ever hit two values that are
+#               not the same go to next sublist.
+#           Early escape if list lengths are not the same
+# timestamps_to_intervals method: How would I handle the incoming data structure not
+#           being ordered in desc time stamps?
+#
