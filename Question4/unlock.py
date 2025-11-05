@@ -46,7 +46,7 @@ def gather_user_tries(limit: int, max_knocks: int) -> List[list]:
     """
     user_timestamps = []
 
-    if limit < 0:
+    if limit <= 0 or max_knocks < 0:
         return user_timestamps
 
     listening = True
@@ -54,6 +54,8 @@ def gather_user_tries(limit: int, max_knocks: int) -> List[list]:
     while listening:
         knock_series = []
         while len(knock_series) <= max_knocks:
+            # What if there is a delay between knocks? How would you handle shutting off
+            # a knock series before getting to max_knocks?
             time = knock_listener()
             knock_series.append(time)
 
