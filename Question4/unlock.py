@@ -7,15 +7,15 @@ myself what I am capable of.
 Scenario: You are an engineer for a lock company. You need to create a function that
 unlocks the lock if the correct knock pattern has occurred.
 The open method and knock listener method has already been created for you.
-open_door() : opens the door attached to the lock
-knock_listener(): returns a timestamp of when the knock occurred
+    open_door() : opens the door attached to the lock
+    knock_listener(): returns a timestamp of when the knock occurred
 """
 
 from typing import List
 
 # My Notes:
 # Formatting: put all this into a class and follow more OOP if expanding,
-#             I am using seconds at a type int but could be type float,
+#             seconds is of type int for simplicity but could be type float,
 # Security: What should be returned to the user if none of their attempts work?
 # Future feats: implement open_door and knock_listener,
 
@@ -38,15 +38,15 @@ def main(valid_pattern: List[int], limit: int = 1) -> None:
 
     user_timestamps = gather_user_tries(limit=limit, max_knocks=len(valid_pattern))
 
-    user_tries = timestamps_to_intervals(user_timestamps)
+    user_intervals = timestamps_to_intervals(user_timestamps)
     # conver user_tries to time intervals. each time interval being the
     # difference between the time stamps in user_tries
 
-    if valid_knock(valid_pattern=valid_pattern, user_tries=user_tries):
+    if valid_knock(valid_pattern=valid_pattern, user_tries=user_intervals):
         open_door()
 
 
-def gather_user_tries(limit: int, max_knocks: int):
+def gather_user_tries(limit: int, max_knocks: int) -> List[list]:
     """Returns an array of knocking attempts equal to the limit parameter.
     Each subarray contains timestamps of a knock limited by the len parameter.
         Example: user_tries = [[],[]]
@@ -74,21 +74,26 @@ def gather_user_tries(limit: int, max_knocks: int):
     return user_timestamps
 
 
-def timestamps_to_intervals(timestamps: List[int]) -> List[int]:
-    """Returns a list of integers representing the duration between two timestamps.
-    Assume the timestamps are is desc order: [oldest time, ... ,earliest time]
+def timestamps_to_intervals(timestamp_series: List[List[int]]) -> List[List[int]]:
+    """Returns a list containing intervals of user knock attempts.
+    Each sublist in the returned list contains durations in seconds representing
+    the difference between two time stamps.
+
+    Args:
+        timestamp_series:[[timestamp, timestamp], [timestamp, timestamp, timestamp]...]
+        Assume the timestamps are is desc order: [[oldest time, ... ,earliest time]]
     """
     # what if the datastructure did not have ordered timestamps?
 
     intervals = []
-
-    for i in range(len(timestamps) - 1):
-        intervals.append(timestamps[i] - timestamps[i + 1])
+    for series in timestamp_series:
+        for i in range(len(series) - 1):
+            intervals.append(series[i] - series[i + 1])
 
     return intervals
 
 
-def valid_knock(valid_pattern: List[int], user_tries: List[list]) -> bool:
+def valid_knock(valid_pattern: List[int], user_tries: List[List[int]]) -> bool:
     """Returns True if a subarray in user_tries matches valid_pattern.
     Args:
         valid_pattern: a list of ints representing valid time intervals in seconds
