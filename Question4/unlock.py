@@ -18,6 +18,10 @@ from typing import List
 #             seconds is of type int for simplicity but could be type float,
 # Security: What should be returned to the user if none of their attempts work?
 # Future feats: implement open_door and knock_listener,
+# Valid knock method: what if we cannot use "==" to compare lists?
+#           Implement with pointer to compare, if ever hit two values that are
+#               not the same go to next sublist.
+#           Early escape if list lengths are not the same
 
 
 def open_door():
@@ -99,7 +103,11 @@ def valid_knock(valid_pattern: List[int], user_tries: List[List[int]]) -> bool:
         valid_pattern: a list of ints representing valid time intervals in seconds
         user_tries: a list of ints representing valid time intervals in seconds
     """
-    return True
+
+    for attempt in user_tries:
+        if valid_pattern == attempt:
+            return True
+    return False
 
 
 if __name__ == "__main__":
